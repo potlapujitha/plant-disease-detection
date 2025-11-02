@@ -1,76 +1,79 @@
 "use client"
 
 import { useAuth } from "@/lib/auth-context"
-import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
+import { useEffect, useState } from "react"
+import { ImageUpload } from "@/components/image-upload"
+import { DiseaseResult } from "@/components/disease-result"
+import type { DetectionResult } from "@/lib/disease-service"
 import { Header } from "@/components/header"
 
-export default function Home() {
-  const { user, loading } = useAuth()
+export default function DashboardPage() {
+  const { user } = useAuth()
   const router = useRouter()
+  const [result, setResult] = useState<DetectionResult | null>(null)
+  const [imageUrl, setImageUrl] = useState<string>("")
 
   useEffect(() => {
-    if (!loading && user) {
-      router.push("/dashboard")
+    if (!user) {
+      router.push("/login")
     }
-  }, [user, loading, router])
+  }, [user, router])
 
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
+  if (!user) {
+    return null
+  }
+
+  const handleDetectionResult = (detectionResult: DetectionResult, image: string) => {
+    setResult(detectionResult)
+    setImageUrl(image)
+
+    const history = JSON.parse(localStorage.getItem("scanHistory") || "[]")
+    history.unshift({
+      id: Math.random().toString(36).substr(2, 9),
+      disease: detectionResult.disease,
+      confidence: detectionResult.confidence,
+      timestamp: new Date().toISOString(),
+      imageUrl: image,
+    })
+    localStorage.setItem("scanHistory", JSON.stringify(history.slice(0, 50)))
+  }
+
+  const handleNewScan = () => {
+    setResult(null)
+    setImageUrl("")
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-16 w-full flex flex-col justify-center">
-        <div className="max-w-2xl">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">Detect Plant Diseases in Seconds</h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Use AI-powered image analysis to identify plant diseases and get instant treatment solutions. Help your
-            plants thrive with PlantShield.
-          </p>
-          <div className="flex gap-4">
-            <Link
-              href="/signup"
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-lg transition"
-            >
-              Get Started Free
-            </Link>
-            <Link
-              href="/login"
-              className="px-6 py-3 border-2 border-green-600 text-green-600 rounded-lg hover:bg-green-50 font-medium text-lg transition"
-            >
-              Sign In
-            </Link>
-          </div>
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-12">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome, {user.name}!</h1>
+          <p className="text-gray-600">Upload a plant image to analyze and detect any diseases</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition">
-            <div className="text-4xl mb-4">📸</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload Image</h3>
-            <p className="text-gray-600">Snap a photo of your plant and upload it directly from your device.</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition">
-            <div className="text-4xl mb-4">🤖</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">AI Analysis</h3>
-            <p className="text-gray-600">Our advanced AI analyzes your plant image in real-time.</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition">
-            <div className="text-4xl mb-4">💡</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Get Solutions</h3>
-            <p className="text-gray-600">Receive personalized treatment recommendations instantly.</p>
-          </div>
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          {result ? (
+            <DiseaseResult result={result} imageUrl={imageUrl} onNewScan={handleNewScan} />
+          ) : (
+            <ImageUpload onDetectionResult={handleDetectionResult} />
+          )}
         </div>
+
+        {result && (
+          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h3 className="font-semibold text-blue-900 mb-2">Tips for Better Results</h3>
+            <ul className="text-blue-800 space-y-1 text-sm">
+              <li>• Take clear, well-lit photos of affected areas</li>
+              <li>• Capture the underside of leaves if possible</li>
+              <li>• Avoid shadows and glare on the image</li>
+              <li>• Include multiple angles for complex cases</li>
+            </ul>
+          </div>
+        )}
       </main>
-
-      <footer className="border-t border-gray-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 py-8 text-center text-gray-600 text-sm">
-          <p>PlantShield - Your AI-powered plant health companion</p>
-        </div>
-      </footer>
     </div>
   )
 }
