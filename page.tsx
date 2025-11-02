@@ -8,24 +8,32 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Header } from "@/components/header"
 
-export default function LoginPage() {
+export default function SignupPage() {
+  const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
+  const { signup } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+
     setLoading(true)
 
     try {
-      await login(email, password)
+      await signup(name, email, password)
       router.push("/dashboard")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed")
+      setError(err instanceof Error ? err.message : "Signup failed")
     } finally {
       setLoading(false)
     }
@@ -38,12 +46,24 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-lg shadow-lg p-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-            <p className="text-gray-600 mb-6">Sign in to PlantShield</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
+            <p className="text-gray-600 mb-6">Join PlantShield today</p>
 
             {error && <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">{error}</div>}
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
+                  placeholder="John Doe"
+                  required
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
@@ -63,7 +83,19 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
+                  placeholder="Confirm your password"
                   required
                 />
               </div>
@@ -73,22 +105,16 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full py-2 px-4 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
-                {loading ? "Signing in..." : "Sign In"}
+                {loading ? "Creating account..." : "Sign Up"}
               </button>
             </form>
 
             <p className="text-center text-gray-600 mt-6">
-              {"Don't have an account? "}
-              <Link href="/signup" className="text-green-600 font-medium hover:text-green-700">
-                Sign up
+              Already have an account?{" "}
+              <Link href="/login" className="text-green-600 font-medium hover:text-green-700">
+                Sign in
               </Link>
             </p>
-
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-xs text-gray-600 text-center">Demo credentials for testing:</p>
-              <p className="text-xs text-gray-500 text-center mt-1">Email: demo@example.com</p>
-              <p className="text-xs text-gray-500 text-center">Password: demo123</p>
-            </div>
           </div>
         </div>
       </div>
